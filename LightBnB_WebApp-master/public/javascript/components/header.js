@@ -49,6 +49,11 @@ $(() => {
     propertyListings.clearListings();
     getAllReservations()
       .then(function(json) {
+        if (json.reservations === null) {
+          alert("Try Again, Dick.")
+          // console.log(json);
+        } 
+          
         propertyListings.addProperties(json.reservations, true);
         views_manager.show('listings');
       })
