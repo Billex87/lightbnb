@@ -8,7 +8,7 @@ const pool = new Pool({
   password: '123',
   host: 'localhost',
   database: 'lightbnb'
-}); 
+});
 pool.connect();
 /// Users
 
@@ -18,14 +18,14 @@ pool.connect();
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function(email) {
- return pool.query('SELECT * FROM users WHERE email = $1', [email]).then(data => {
-   console.log(data.rows); // show the data
-   return data.rows[0];
- }).catch(error => {
-   console.log(error); // shows the error
- })
- 
-}
+  return pool.query('SELECT * FROM users WHERE email = $1', [email]).then(data => {
+    console.log(data.rows); // show the data
+    return data.rows[0];
+  }).catch(error => {
+    console.log(error); // shows the error
+  });
+
+};
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -39,8 +39,8 @@ const getUserWithId = function(id) {
     return data.rows[0];
   }).catch(error => {
     console.log(error); //shows the error
-  })
-}
+  });
+};
 exports.getUserWithId = getUserWithId;
 
 
@@ -49,7 +49,7 @@ exports.getUserWithId = getUserWithId;
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
-const addUser =  function(user) {
+const addUser = function(user) {
   const name = user['name'];
   const email = user['email'];
   const hashedPassword = bcrypt.hashSync(user['password'], 10);
@@ -59,18 +59,18 @@ VALUES ($1, $2, $3)
 RETURNING *;
 `;
 
-const values = [name, email, hashedPassword]
-return pool.query(queryString, values)
-.then(res => {
-  if(res.rows.length){
-    console.log(res.rows); //shows the data
-    return res.rows[0]
-  } else {
-    return null;
-  }
-}).catch(error => {
-  console.log(error); //shows the error
-});
+  const values = [name, email, hashedPassword];
+  return pool.query(queryString, values)
+    .then(res => {
+      if (res.rows.length) {
+        console.log(res.rows); //shows the data
+        return res.rows[0];
+      } else {
+        return null;
+      }
+    }).catch(error => {
+      console.log(error); //shows the error
+    });
 };
 exports.addUser = addUser;
 
@@ -82,8 +82,36 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
+  const queryString = `
+  SELECT properties.*, reservations.*, avg(rating) as average_rating
+  FROM reservations
+  JOIN properties ON reservations.property_id = properties.id
+  JOIN property_reviews ON properties.id = property_reviews.property_id 
+  WHERE reservations.guest_id = $1
+  AND reservations.end_date < now()::date
+  GROUP BY properties.id, reservations.id
+  ORDER BY reservations.start_date
+  LIMIT $2;
+  `;
+
+  const values = [guest_id, limit];
+
+  return pool.query(queryString, values)
+    .then(res => {
+      if (res.rows.length) {
+        console.log(res.rows);
+        return res.rows;
+      } else {
+        console.log("Nothing Here");
+        return null;
+      }
+    }).catch(error => {
+      console.log(error); //shows the error
+    });
+
+
   return getAllProperties(null, 2);
-}
+};
 exports.getAllReservations = getAllReservations;
 
 /// Properties
@@ -99,8 +127,8 @@ const getAllProperties = function(options, limit = 10) {
   SELECT * FROM properties
   LIMIT $1
   `, [limit])
-  .then(res => res.rows);
-}
+    .then(res => res.rows);
+};
 exports.getAllProperties = getAllProperties;
 
 
@@ -114,5 +142,5 @@ const addProperty = function(property) {
   property.id = propertyId;
   properties[propertyId] = property;
   return Promise.resolve(property);
-}
+};
 exports.addProperty = addProperty;
